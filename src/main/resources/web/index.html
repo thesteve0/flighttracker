@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Flights United</title>
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" />
+    <!--[if lte IE 8]>
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.5.1/leaflet.ie.css" />
+    <![endif]-->
+    <link href='http://fonts.googleapis.com/css?family=Milonga' rel='stylesheet' type='text/css'>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />	<style type="text/css">
+    body {
+        padding: 0;
+        margin: 0;
+    }
+    html, body, #map {
+        height: 100%;
+        font-family: 'Milonga', cursive;
+    }
+    .leaflet-container .leaflet-control-zoom {
+        margin-left: 13px;
+        margin-top: 70px;
+    }
+
+
+
+    #map { z-index: 1;}
+    #title { z-index: 2; position: absolute; left: 10px; }
+</style>
+
+</head>
+<body>
+<h1 id="title">Flights United</h1>
+<div id="map"></div>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/sockjs-client/0.3.4/sockjs.min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/vertx/2.0.0/vertxbus.min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
+<script>
+
+
+//////////////// set up the map stuff
+
+    var myIcon = L.icon({
+        iconUrl: "http://cdn.leafletjs.com/leaflet-0.7.2/images/marker-icon.png",
+        iconSize: [12, 20]
+
+    });
+
+
+    var map = L.map('map').setView([39.82, -98.57], 6);
+    var markerLayerGroup = L.layerGroup().addTo(map);
+    L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: 'Running on <a href="http://openshift.com">OpenShift</a>, United Flight data from <a href="https://developer.flightstats.com/"> FlightStats</a>, Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
+    }).addTo(map);
+
+    function pinTheMap(data){
+
+        //clear the current pins
+        map.removeLayer(markerLayerGroup);
+
+        //add the new pins
+        var markerArray = new Array(data.length)
+        for (var i = 0; i < data.length; i++){
+            plane = data[i];
+            markerArray[i] = L.marker([plane.lat, plane.lon], {icon: myIcon}).bindPopup(plane.name + "<br> Alititude: " + plane.alt + "ft <br /> Speed: " + plane.speed + "mph" );
+        }
+
+        markerLayerGroup = L.layerGroup(markerArray).addTo(map);
+
+
+    }
+
+////////////////Now the web sockets
+    var eb = new vertx.EventBus(window.location.protocol + '//' +
+            window.location.hostname + ':' +
+            8000 + '/eventbus');
+
+    eb.onopen = function() {
+        console.log("eventbus opened");
+        eb.registerHandler('flights.updated', function(event)
+            {
+                console.log("received " + event.length + " flights: " + Math.round((new Date()).getTime() / 1000));
+                pinTheMap(event);
+            }
+        );
+    }
+
+
+
+</script>
+</body>
+</html>
