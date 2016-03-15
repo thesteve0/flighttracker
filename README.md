@@ -2,7 +2,7 @@
 
 Prequisites:
 1) You need an OpenShift account
-2) You need a [https://developer.flightstats.com/](FlightStats account)
+2) You need a [FlightStats account](https://developer.flightstats.com/)
 3) You need Maven installed on your local machine
 
 Create a new OpenShift application with a vert.x cartridge
